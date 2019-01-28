@@ -1,7 +1,8 @@
 ﻿const crypto = require('crypto'),
     debug = require('debug'),
     minimatch = require('minimatch'),
-    path = require('path');
+    path = require('path'),
+    pLimit = require('p-limit');
 
 const defaultOptions = {
     algo: 'sha1',       // see crypto.getHashes() for options
@@ -19,7 +20,8 @@ const defaultOptions = {
         matchBasename: true,
         matchPath: false,
         ignoreRootName: false
-    }
+    },
+    batch: 100
 };
 
 // Use the environment variable DEBUG to log output, e.g. `set DEBUG=fhash:*`
@@ -95,9 +97,11 @@ function prep(fs, Promise) {
             return undefined;
         }
 
+        const limit = pLimit(options.batch);
+
         return readdir(folderPath).then(files => {
             const children = files.map(child => {
-                return hashElementPromise(child, folderPath, options);
+                return limit(() => hashElementPromise(child, folderPath, options));
             });
 
             return Promise.all(children).then(children => {
@@ -250,7 +254,8 @@ function parseParameters(args) {
         encoding: options_.encoding || defaultOptions.encoding,
         files: Object.assign({}, defaultOptions.files, options_.files),
         folders: Object.assign({}, defaultOptions.folders, options_.folders),
-        match: Object.assign({}, defaultOptions.match, options_.match)
+        match: Object.assign({}, defaultOptions.match, options_.match),
+        batch: options_.batch || defaultOptions.batch
     };
 
     // transform match globs to Regex
