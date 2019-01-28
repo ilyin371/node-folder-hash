@@ -21,7 +21,7 @@ const defaultOptions = {
         matchPath: false,
         ignoreRootName: false
     },
-    batch: 100
+    concurrencyLimit: 100
 };
 
 // Use the environment variable DEBUG to log output, e.g. `set DEBUG=fhash:*`
@@ -97,7 +97,7 @@ function prep(fs, Promise) {
             return undefined;
         }
 
-        const limit = pLimit(options.batch);
+        const limit = pLimit(options.concurrencyLimit);
 
         return readdir(folderPath).then(files => {
             const children = files.map(child => {
@@ -255,7 +255,7 @@ function parseParameters(args) {
         files: Object.assign({}, defaultOptions.files, options_.files),
         folders: Object.assign({}, defaultOptions.folders, options_.folders),
         match: Object.assign({}, defaultOptions.match, options_.match),
-        batch: options_.batch || defaultOptions.batch
+        concurrencyLimit: options_.concurrencyLimit || defaultOptions.concurrencyLimit
     };
 
     // transform match globs to Regex
